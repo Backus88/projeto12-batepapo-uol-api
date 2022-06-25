@@ -28,16 +28,36 @@ app.post('/participants', async (request, response)=>{
         const existParticipant = await participantsCollection.find({name: participant.name}).toArray();
         if(existParticipant.length === 0){
             participant.lastStatus = Date.now();
-            dbUol.collection("participants").insertOne(participant);
+            await participantsCollection.insertOne(participant);
             response.send(participant).status(201);
-            
+            mongoClient.close();
+            return;
         }else{
             response.sendStatus(409);
+            mongoClient.close();
+            return
         }
     }catch(error){
         response.sendStatus(500);
+        mongoClient.close();
+        return
     }
-    // mongoClient.close();
+});
+
+app.get('/participants', async (request, response)=>{
+    try{
+        await mongoClient.connect();
+        const dbUol = mongoClient.db("chatUol");
+        const participantsCollection = dbUol.collection("participants");
+        const getParticipants = await participantsCollection.find().toArray();
+        response.send(getParticipants).status(201);
+        mongoClient.close();
+        return
+    }catch(error){
+        response.sendStatus(500);
+        mongoClient.close();
+        return
+    }
 })
 
 app.listen(5000, ()=>{
