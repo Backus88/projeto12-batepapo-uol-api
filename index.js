@@ -9,7 +9,7 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 app.use(cors());
-const mongoClient = new MongoClient(process.env.MONGO_URI);
+
 // Validade the user
 const validateParticipant = joi.object({
     name : joi.string().required()
@@ -24,6 +24,7 @@ const validateMsg = joi.object({
 });
 // set a interval to remove the inactive users
 setInterval( async () => {
+    const mongoClient = new MongoClient(process.env.MONGO_URI);
     await mongoClient.connect();
     const dbUol = mongoClient.db("chatUol");
     const participantsCollection = dbUol.collection("participants");
@@ -49,6 +50,7 @@ setInterval( async () => {
 
 
 app.post('/participants', async (request, response)=>{
+    const mongoClient = new MongoClient(process.env.MONGO_URI);
     const participant = request.body
     const validation = validateParticipant.validate(participant);
     participant.lastStatus = Date.now();
@@ -91,6 +93,7 @@ app.post('/participants', async (request, response)=>{
 });
 
 app.get('/participants', async (request, response)=>{
+    const mongoClient = new MongoClient(process.env.MONGO_URI);
     try{
         await mongoClient.connect();
         const dbUol = mongoClient.db("chatUol");
@@ -107,6 +110,7 @@ app.get('/participants', async (request, response)=>{
 });
 
 app.post('/messages', async (request, response)=>{
+    const mongoClient = new MongoClient(process.env.MONGO_URI);
     const {to, text, type} = request.body;
     const name = request.headers.user;
     const message = {
@@ -148,6 +152,7 @@ app.post('/messages', async (request, response)=>{
 });
 
 app.get('/messages', async (request, response)=>{
+    const mongoClient = new MongoClient(process.env.MONGO_URI);
     const user = request.headers.user;
     const limit = parseInt(request.query.limit);
     try{
@@ -167,6 +172,7 @@ app.get('/messages', async (request, response)=>{
 });
 
 app.post('/status', async (request, response)=>{
+    const mongoClient = new MongoClient(process.env.MONGO_URI);
     const user = request.headers.user;
     try{
         await mongoClient.connect();
