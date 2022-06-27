@@ -10,11 +10,11 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 const mongoClient = new MongoClient(process.env.MONGO_URI);
-
+// Validade the user
 const validateParticipant = joi.object({
     name : joi.string().required()
 });
-
+//Validate the msg
 const validateMsg = joi.object({
     from: joi.string().required(),
     to : joi.string().required(),
@@ -22,13 +22,14 @@ const validateMsg = joi.object({
     type: joi.any().valid('message', 'private_message'),
     time: joi.string().required()
 });
-
+// set a interval to remove the inactive users
 setInterval( async () => {
     await mongoClient.connect();
     const dbUol = mongoClient.db("chatUol");
     const participantsCollection = dbUol.collection("participants");
     const msgCollection = dbUol.collection ("messages");
-    const deletedParticipants = await participantsCollection.find({lastStatus: {$lt : (Date.now()- 10000)}}).toArray();
+    let date = Date.now() -10000;
+    const deletedParticipants = await participantsCollection.find({lastStatus: {$lt : date }}).toArray();
     console.log(deletedParticipants);
     if (deletedParticipants.length > 0){
         for (const v of deletedParticipants){
@@ -43,9 +44,9 @@ setInterval( async () => {
             await participantsCollection.deleteOne({name: v.name });
         };
     };
-    console.log('entrei no set interval');
     mongoClient.close();
 }, 15000);
+
 
 app.post('/participants', async (request, response)=>{
     const participant = request.body
@@ -68,7 +69,9 @@ app.post('/participants', async (request, response)=>{
         const dbUol = mongoClient.db("chatUol");
         const participantsCollection = dbUol.collection("participants");
         const msgCollection = dbUol.collection ("messages");
+        //Filter if the user is already logged
         const existParticipant = await participantsCollection.find({name: participant.name}).toArray();
+        //Accept only users not qual to null and that isnt logged
         if(existParticipant.length === 0 && participant.from !== null){
             await participantsCollection.insertOne(participant);
             await msgCollection.insertOne(intialMsg);
@@ -116,7 +119,6 @@ app.post('/messages', async (request, response)=>{
     const validation = validateMsg.validate(message);
 
     if(validation.error){
-        console.log('erro');
         response.sendStatus(422);
         return;
     }
@@ -152,8 +154,9 @@ app.get('/messages', async (request, response)=>{
         await mongoClient.connect();
         const dbUol = mongoClient.db("chatUol");
         const msgsCollection = dbUol.collection("messages");
+        // filter the users where the msgs loaded corresponds to the user permit, all user can see message and status types and private_messa type only when they are involved.
         const getMsgs = await msgsCollection.find({$or:[{type: 'message'},{type:'status'},{type:'private_message', from: user },{type: 'private_message', to: user}]}).sort({_id: -1}).limit(limit).toArray();
-        response.send(getMsgs).status(201);
+        response.send(getMsgs.reverse()).status(201);
         mongoClient.close();
         return;
     }catch(error){
@@ -171,7 +174,8 @@ app.post('/status', async (request, response)=>{
         const participantsCollection = dbUol.collection("participants");
         const existParticipant = await participantsCollection.find({name: user}).toArray();
         if(existParticipant.length !== 0){
-            await participantsCollection.updateOne({name: user}, {$set:{lastStatus: Date.now()}})
+            //update the status based on the user name
+            await participantsCollection.updateOne({name: user}, {$set:{lastStatus: Date.now()}});
             response.sendStatus(200);
             mongoClient.close();
             return;
