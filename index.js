@@ -130,14 +130,37 @@ app.get('/messages', async (request, response)=>{
         const getMsgs = await msgsCollection.find({$or:[{type: 'message'},{type:'status'},{type:'private_message', from: user },{type: 'private_message', to: user}]}).sort({_id: -1}).limit(limit).toArray();
         response.send(getMsgs).status(201);
         mongoClient.close();
-        return
+        return;
     }catch(error){
         response.sendStatus(500);
         mongoClient.close();
-        return
+        return;
     }
 });
 
+app.post('/status', async (request, response)=>{
+    const user = request.headers.user;
+    try{
+        await mongoClient.connect();
+        const dbUol = mongoClient.db("chatUol");
+        const participantsCollection = dbUol.collection("participants");
+        const existParticipant = await participantsCollection.find({name: user}).toArray();
+        if(existParticipant.length !== 0){
+            await participantsCollection.updateOne({name: user}, {$set:{lastStatus: Date.now()}})
+            response.sendStatus(200);
+            mongoClient.close();
+            return;
+        }else{
+            response.sendStatus(404);
+            mongoClient.close();
+            return;
+        }
+    }catch(error){
+        response.sendStatus(500);
+        mongoClient.close();
+        return;
+    }
+});
 
 
 app.listen(5000, ()=>{

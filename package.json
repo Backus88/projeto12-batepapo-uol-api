@@ -1,8 +1,7 @@
 {
   "name": "projeto12-batepapo-uol-api",
   "version": "1.0.0",
-  "type" : "module",
-  "description": "",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -12,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
+    "dayjs": "^1.11.3",
     "dotenv": "^14.3.2",
     "express": "^4.18.1",
     "joi": "^17.6.0",
@@ -19,5 +19,14 @@
   },
   "devDependencies": {
     "nodemon": "^2.0.18"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Backus88/projeto12-batepapo-uol-api.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Backus88/projeto12-batepapo-uol-api/issues"
+  },
+  "homepage": "https://github.com/Backus88/projeto12-batepapo-uol-api#readme",
+  "description": ""
 }
