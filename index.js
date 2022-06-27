@@ -23,6 +23,30 @@ const validateMsg = joi.object({
     time: joi.string().required()
 });
 
+setInterval( async () => {
+    await mongoClient.connect();
+    const dbUol = mongoClient.db("chatUol");
+    const participantsCollection = dbUol.collection("participants");
+    const msgCollection = dbUol.collection ("messages");
+    const deletedParticipants = await participantsCollection.find({lastStatus: {$lt : (Date.now()- 10000)}}).toArray();
+    console.log(deletedParticipants);
+    if (deletedParticipants.length > 0){
+        for (const v of deletedParticipants){
+            let auxObject = {
+                from: v.name,
+                to: 'Todos',
+                text: 'sai da sala',
+                type: 'status',
+                time: dayjs().format('HH:mm:ss')
+            };
+            await msgCollection.insertOne(auxObject);
+            await participantsCollection.deleteOne({name: v.name });
+        };
+    };
+    console.log('entrei no set interval');
+    mongoClient.close();
+}, 15000);
+
 app.post('/participants', async (request, response)=>{
     const participant = request.body
     const validation = validateParticipant.validate(participant);
@@ -36,6 +60,7 @@ app.post('/participants', async (request, response)=>{
     }
     if(validation.error){
         response.sendStatus(422);
+        return;
     }
 
     try{
@@ -44,7 +69,7 @@ app.post('/participants', async (request, response)=>{
         const participantsCollection = dbUol.collection("participants");
         const msgCollection = dbUol.collection ("messages");
         const existParticipant = await participantsCollection.find({name: participant.name}).toArray();
-        if(existParticipant.length === 0 || participant.from !== null){
+        if(existParticipant.length === 0 && participant.from !== null){
             await participantsCollection.insertOne(participant);
             await msgCollection.insertOne(intialMsg);
             response.send(participant).status(201);
@@ -53,12 +78,12 @@ app.post('/participants', async (request, response)=>{
         }else{
             response.sendStatus(409);
             mongoClient.close();
-            return
+            return;
         }
     }catch(error){
         response.sendStatus(500);
         mongoClient.close();
-        return
+        return;
     }
 });
 
@@ -70,11 +95,11 @@ app.get('/participants', async (request, response)=>{
         const getParticipants = await participantsCollection.find().toArray();
         response.send(getParticipants).status(201);
         mongoClient.close();
-        return
+        return;
     }catch(error){
         response.sendStatus(500);
         mongoClient.close();
-        return
+        return;
     }
 });
 
@@ -161,6 +186,7 @@ app.post('/status', async (request, response)=>{
         return;
     }
 });
+
 
 
 app.listen(5000, ()=>{
