@@ -28,7 +28,7 @@ setInterval( async () => {
     const dbUol = mongoClient.db("chatUol");
     const participantsCollection = dbUol.collection("participants");
     const msgCollection = dbUol.collection ("messages");
-    let date = Date.now() -10000;
+    let date = parseInt(Date.now() -10000);
     const deletedParticipants = await participantsCollection.find({lastStatus: {$lt : date }}).toArray();
     console.log(deletedParticipants);
     if (deletedParticipants.length > 0){
@@ -75,7 +75,7 @@ app.post('/participants', async (request, response)=>{
         if(existParticipant.length === 0 && participant.from !== null){
             await participantsCollection.insertOne(participant);
             await msgCollection.insertOne(intialMsg);
-            response.send(participant).status(201);
+            response.status(201).send(participant);
             mongoClient.close();
             return;
         }else{
@@ -96,7 +96,7 @@ app.get('/participants', async (request, response)=>{
         const dbUol = mongoClient.db("chatUol");
         const participantsCollection = dbUol.collection("participants");
         const getParticipants = await participantsCollection.find().toArray();
-        response.send(getParticipants).status(201);
+        response.status(201).send(getParticipants);
         mongoClient.close();
         return;
     }catch(error){
@@ -131,7 +131,7 @@ app.post('/messages', async (request, response)=>{
         const existParticipant = await participantsCollection.find({name: message.from}).toArray();
         if(existParticipant.length !== 0){
             await msgCollection.insertOne(message);
-            response.send(message).status(200);
+            response.status(201).send(message);
             mongoClient.close();
             return;
         }else{
@@ -175,7 +175,7 @@ app.post('/status', async (request, response)=>{
         const existParticipant = await participantsCollection.find({name: user}).toArray();
         if(existParticipant.length !== 0){
             //update the status based on the user name
-            await participantsCollection.updateOne({name: user}, {$set:{lastStatus: Date.now()}});
+            await participantsCollection.updateOne({name: user}, {$set:{lastStatus: parseInt(Date.now())}});
             response.sendStatus(200);
             mongoClient.close();
             return;
